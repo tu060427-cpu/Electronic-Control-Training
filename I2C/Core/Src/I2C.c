@@ -23,9 +23,16 @@ void I2C_Stop(void)
     SDA_H;
 }
 
-void I2C_Ack(void)//读取应答
+void I2C_Ack_no(void)//读取非应答
 {
     SDA_H;
+    SCL_H;
+    SCL_L;
+}
+
+void I2C_Ack_yes(void)//读取应答
+{
+    SDA_L;
     SCL_H;
     SCL_L;
 }
