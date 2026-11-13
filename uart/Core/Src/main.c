@@ -18,6 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "stm32f103xb.h"
+#include "stm32f1xx_hal_uart.h"
+#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -41,14 +44,24 @@
 
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
-
+uint8_t mat = 0x01;
+uint8_t matsum[] = {0x01,0x02,0x03,0x04};
+char ch = 'a' ;
+char chsum[] = "Hello World" ;
+uint8_t h[] = "\r\n" ;
+uint8_t key;
+volatile uint8_t rx_flag = 2;
+volatile uint8_t led_flag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -56,7 +69,33 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if(huart -> Instance == USART1)
+  {
+    if(key == '1')
+    {
+      rx_flag = 1;
+    }
+    else if(key == '0')
+    {
+      rx_flag = 0;
+    }
+  HAL_UART_Receive_IT(&huart1, &key, 1);
+  }
+}
 
+
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+  if(huart -> Instance == USART1)
+  {
+    __HAL_UART_CLEAR_OREFLAG(huart);
+    huart -> RxState = HAL_UART_STATE_READY;
+    HAL_UART_Receive_IT(&huart1, &key, 1);
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -68,12 +107,6 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-  uint8_t mat = 0x01;
-  uint8_t matsum[] = {0x01,0x02,0x03,0x04};
-  char ch = 'a' ;
-  char chsum[] = "Hello Wrold" ;
-  uint8_t h[] = "\r\n" ;
-  uint8_t key;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -94,31 +127,45 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Transmit(&huart1,&mat,1,100);
+  /*HAL_UART_Transmit(&huart1,&mat,1,100);
   HAL_UART_Transmit(&huart1,h,2,100);
   HAL_UART_Transmit(&huart1,matsum,4,100);
   HAL_UART_Transmit(&huart1,h,2,100);
   HAL_UART_Transmit(&huart1,(uint8_t *)&ch,1,100);
   HAL_UART_Transmit(&huart1,h,2,100);
   HAL_UART_Transmit(&huart1,(uint8_t *)chsum,sizeof(chsum)/sizeof(char),100);
-  HAL_UART_Transmit(&huart1,h,2,100);
+  HAL_UART_Transmit(&huart1,h,2,100);*/
+  HAL_UART_Receive_IT(&huart1,&key,1);  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    HAL_UART_Receive(&huart1,&key,1,100);
-    if(key == '1')
+    if(led_flag == 0)
+    {
+      if(rx_flag == 1)
     {
       HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_SET);
+      HAL_UART_Transmit(&huart1,(uint8_t *)"LED_ON\r\n",sizeof("LED_ON\r\n") - 1,100);
+      rx_flag = 2;
+      led_flag = 1;
     }
-    else if(key == '0')
+    }
+    else if(led_flag == 1)
+  {
+     if(rx_flag == 0)
     {
       HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_RESET);
+      HAL_UART_Transmit(&huart1,(uint8_t *)"LED_OFF\r\n",sizeof("LED_OFF\r\n") - 1,100);
+      rx_flag = 2;
+      led_flag = 0;
     }
+  }
+    
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -192,6 +239,25 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
 
 }
 
