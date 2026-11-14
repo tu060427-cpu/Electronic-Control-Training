@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f103xb.h"
+#include "stm32f1xx_hal_dma.h"
 #include "stm32f1xx_hal_uart.h"
 #include <stdint.h>
 
@@ -56,6 +57,7 @@ uint8_t h[] = "\r\n" ;
 uint8_t key;
 volatile uint8_t rx_flag = 2;
 volatile uint8_t led_flag = 0;
+uint8_t rx_buffer[100];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,7 +71,7 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+/*void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if(huart -> Instance == USART1)
   {
@@ -81,9 +83,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     {
       rx_flag = 0;
     }
-  HAL_UART_Receive_IT(&huart1, &key, 1);
+//  HAL_UART_Receive_IT(&huart1, &key, 1);
+  HAL_UART_Receive_DMA(&huart1, &key, 1);
   }
-}
+}*/
 
 
 
@@ -93,9 +96,32 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
   {
     __HAL_UART_CLEAR_OREFLAG(huart);
     huart -> RxState = HAL_UART_STATE_READY;
-    HAL_UART_Receive_IT(&huart1, &key, 1);
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, sizeof(rx_buffer));
+    __HAL_DMA_DISABLE_IT(&hdma_usart1_rx,DMA_IT_HT);
+//  HAL_UART_Receive_IT(&huart1, &key, 1);
+//  HAL_UART_Receive_DMA(&huart1, &key, 1);
   }
 }
+
+
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+  if(huart -> Instance == USART1)
+  {
+    if(rx_buffer[0] == '1')
+    {
+      rx_flag = 1;
+    }
+    else if(rx_buffer[0] == '0')
+    {
+      rx_flag = 0;
+    }
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, sizeof(rx_buffer));
+    __HAL_DMA_DISABLE_IT(&hdma_usart1_rx,DMA_IT_HT);
+  }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -138,7 +164,9 @@ int main(void)
   HAL_UART_Transmit(&huart1,h,2,100);
   HAL_UART_Transmit(&huart1,(uint8_t *)chsum,sizeof(chsum)/sizeof(char),100);
   HAL_UART_Transmit(&huart1,h,2,100);*/
-  HAL_UART_Receive_IT(&huart1,&key,1);  
+//  HAL_UART_Receive_IT(&huart1,&key,1);
+//  HAL_UART_Receive_DMA(&huart1,&key,1);
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, sizeof(rx_buffer));
   /* USER CODE END 2 */
 
   /* Infinite loop */
