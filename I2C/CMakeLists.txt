@@ -63,6 +63,11 @@ list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
-
     # Add user defined libraries
+)
+
+# Add user sources here
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+    Core/Src/MPU6050.c
+    Core/Src/I2C.c
 )
