@@ -25,7 +25,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "oled.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -100,8 +99,6 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(20);
-  OLED_Init();
   HAL_TIM_Base_Start_IT(&htim2);
   int counter = 0;
   char message[20] = "";
