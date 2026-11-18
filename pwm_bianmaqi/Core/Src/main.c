@@ -78,7 +78,7 @@ int main(void)
   int16_t last_counter = 0;
   int16_t brightness = 0;
   static uint32_t last_key_time = 0;
-  static uint8_t key_flag = 1;
+  static uint8_t last_key_state = 1;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -114,12 +114,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    uint8_t key_state_flag = HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_15);
-    if(key_state_flag == 0 && key_flag == 1)
+    uint8_t current_key_state = HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_15);
+    if(current_key_state == 0 && last_key_state == 1)
     {
       if(HAL_GetTick() - last_key_time > 20)
       {
-          key_flag = 1;
           channels_flag++;
           if(channels_flag > 2)channels_flag = 0;
           brightness = 0;
@@ -132,7 +131,8 @@ int main(void)
       }
       last_key_time = HAL_GetTick();
     }
-    key_flag = key_state_flag;
+    last_key_state = current_key_state;
+
     int16_t current_counter = (int16_t)__HAL_TIM_GET_COUNTER(&htim1);
     int16_t diff = current_counter - last_counter;
     last_counter = current_counter;
