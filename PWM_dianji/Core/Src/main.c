@@ -94,6 +94,7 @@ int main(void)
   int8_t dir = 0;
   int8_t last_dir = 0;
   uint8_t dengdai_tim = 0;
+  uint16_t last_oled_time = 0;
 
   /* USER CODE END 1 */
 
@@ -181,7 +182,7 @@ int main(void)
     if(speed < 0)speed = -speed;
 
 
-    if(HAL_GetTick() - last_dir >= OLED_TIME)
+    if(HAL_GetTick() - last_oled_time >= OLED_TIME)
     {
       sprintf(message_speed,"speed:%5d",(int)speed);
       sprintf(message_counter,"counter:%5d",(int)counter);
@@ -189,7 +190,7 @@ int main(void)
       OLED_ShowString(1,0,message_speed,OLED_8X16);
       OLED_ShowString(1,16,message_counter,OLED_8X16);
       OLED_UpdateArea(0,0,128,32);
-      last_dir = HAL_GetTick();
+      last_oled_time = HAL_GetTick();
     }
     
     /* USER CODE END WHILE */
