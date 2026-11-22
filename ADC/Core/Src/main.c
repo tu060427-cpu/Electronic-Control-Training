@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "stm32f1xx_hal_adc.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -48,7 +49,7 @@ DMA_HandleTypeDef hdma_adc1;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-uint8_t adc_flag = 1;
+uint8_t adc_flag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -111,7 +112,7 @@ uint32_t last_time = 0;
 uint32_t current_time = 0;
 
 HAL_ADCEx_Calibration_Start(&hadc1);
-HAL_ADC_Start(&hadc1);
+HAL_ADC_Start_DMA(&hadc1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -119,17 +120,18 @@ HAL_ADC_Start(&hadc1);
   while (1)
   {
 
-    HAL_ADC_Start_DMA(&hadc1,(uint32_t *)values,sizeof(values) / sizeof(uint16_t));
-
     current_time = HAL_GetTick();
 
     if(current_time - last_time > 500)
     {
       if(adc_flag == 1)
       {
+        adc_flag = 0;
+
         sprintf(message,"%d %d %d %d",values[0],values[1],values[2],values[3]);
         HAL_UART_Transmit(&huart1,(uint8_t *)message,strlen(message),100);
-        adc_flag = 0;
+
+        HAL_ADC_Start_DMA(&hadc1,(uint32_t *)values,sizeof(values) / sizeof(uint16_t));
       }
       last_time = HAL_GetTick();
     }
